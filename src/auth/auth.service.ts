@@ -78,7 +78,7 @@ export class AuthService {
 
     user.otp_code = this.getOptCode();
 
-    user.verificationTokenExpires = addMinutes(new Date(), 1);
+    user.verificationTokenExpires = addMinutes(new Date(), 5);
 
     await this.userRepository.save(user);
     this.sendEmail(email, 'Confirmation password', user.otp_code );
@@ -94,21 +94,60 @@ export class AuthService {
 
 
   private async sendEmail( to: string, subject: string, otp_code: number ){
-    const htmlBody: string = `
-      <h1>Hola, aca tienes el codigo de verificacion</h1>
-      <p>${otp_code}</p>
-    `;
+    const htmlBody = `
+  <div style="font-family: Arial, sans-serif; padding: 20px;">
+    <h2 style="color: #0A66C2;">Recuperación de contraseña</h2>
+
+    <p>Hola,</p>
+
+    <p>Hemos recibido una solicitud para restablecer la contraseña de tu cuenta asociada a este correo.</p>
+
+    <p style="font-size: 16px; color: #333;">
+      Tu código de verificación es:
+    </p>
+
+    <!-- CONTENEDOR CENTRADO PARA EMAILS -->
+    <table width="100%" cellspacing="0" cellpadding="0">
+      <tr>
+        <td align="center">
+          <div style="
+            background: #f1f5fe;
+            padding: 15px;
+            font-size: 28px;
+            text-align: center;
+            letter-spacing: 4px;
+            font-weight: bold;
+            border-radius: 10px;
+            width: 200px;
+          ">
+            ${otp_code}
+          </div>
+        </td>
+      </tr>
+    </table>
+
+    <p style="margin-top: 20px; color: #555;">
+      Este código es válido por <strong>5 minutos</strong>.  
+      Si no solicitaste este cambio, puedes ignorar este mensaje.
+    </p>
+
+    <p style="margin-top: 30px;">Saludos,<br>
+    <strong>Equipo de Seguridad</strong></p>
+  </div>
+`;
+
     await this.mailerService.sendEmail({to, subject, htmlBody: htmlBody});
   }
 
 
-  async confirmPassword( confirmPasswordDto: ConfirmPasswordDto) {
+  async confirmPassword( confirmPasswordDto: ConfirmPasswordDto, email: string ) {
     try {
       const { otp_code, password } = confirmPasswordDto;
       const user = await this.userRepository.findOne({
         where: {
-          otp_code
-        }
+          otp_code,
+          email
+        },
       });
 
       if( !user || user.verificationTokenExpires! < new Date()){

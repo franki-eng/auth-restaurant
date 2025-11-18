@@ -44,11 +44,12 @@ export class AuthController {
     return await this.authService.updatePassword(verifyEmailExisteDto);
   }
 
-  @Post('confirm-password')
+  @Post('confirm-password/:email')
   async confirmPassword(
+    @Param('email') email: string,
     @Body() confirmPasswordDto: ConfirmPasswordDto,
   ){
-    return await this.authService.confirmPassword(confirmPasswordDto);
+    return await this.authService.confirmPassword(confirmPasswordDto, email);
   }
 
   //!TODO falta activar los cors y el ngrok
