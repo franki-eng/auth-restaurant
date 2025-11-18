@@ -97,7 +97,7 @@ export class AuthService {
     const htmlBody = `
   <div style="font-family: Arial, sans-serif; padding: 20px;">
     <h2 style="color: #0A66C2;">Recuperación de contraseña</h2>
-
+    
     <p>Hola,</p>
 
     <p>Hemos recibido una solicitud para restablecer la contraseña de tu cuenta asociada a este correo.</p>
