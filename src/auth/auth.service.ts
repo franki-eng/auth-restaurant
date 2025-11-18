@@ -4,8 +4,12 @@ import * as bcrypt from 'bcryptjs';
 import { User } from './entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { LoginUserDto, UpdateUserDto } from './dto';
+import { LoginUserDto, UpdateUserDto, VerifyEmailExisteDto } from './dto';
 import { ResponseInterface } from './interfaces/response-success.interface';
+import { MailService } from '../mail/mail.service';
+import { addMinutes } from 'date-fns';
+import { ConfirmPasswordDto } from './dto/confirm-password.dto';
+import { ConfigService } from '@nestjs/config';
 
 
 @Injectable()
@@ -16,6 +20,8 @@ export class AuthService {
   constructor( 
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private readonly mailerService: MailService,
+    private readonly configService: ConfigService,
   ) {}
 
   async createUser(createAuthDto: CreateUserDto): Promise<ResponseInterface> {
@@ -65,6 +71,74 @@ export class AuthService {
     const { password, ...rest } = user;
     return rest;
   }
+
+  async updatePassword( verifyEmailExisteDto: VerifyEmailExisteDto ): Promise<ResponseInterface>{
+    const { email } = verifyEmailExisteDto;
+    const user: User = await this.findOne(email);
+
+    user.otp_code = this.getOptCode();
+
+    user.verificationTokenExpires = addMinutes(new Date(), 1);
+
+    await this.userRepository.save(user);
+    this.sendEmail(email, 'Confirmation password', user.otp_code );
+    const parseUser = this.parseUser(user);
+    return {
+      success: true,
+      message: "Se va enviado un codigo a su email",
+      data: {
+        user: parseUser,
+      }
+    }
+  }
+
+
+  private async sendEmail( to: string, subject: string, otp_code: number ){
+    const htmlBody: string = `
+      <h1>Hola, aca tienes el codigo de verificacion</h1>
+      <p>${otp_code}</p>
+    `;
+    await this.mailerService.sendEmail({to, subject, htmlBody: htmlBody});
+  }
+
+
+  async confirmPassword( confirmPasswordDto: ConfirmPasswordDto) {
+    try {
+      const { otp_code, password } = confirmPasswordDto;
+      const user = await this.userRepository.findOne({
+        where: {
+          otp_code
+        }
+      });
+
+      if( !user || user.verificationTokenExpires! < new Date()){
+        return {
+          success: false,
+          message: 'codigo Código inválido o expirado',
+          data: null,
+        };
+      }
+
+      user.password = this.hashedPassword(password);
+      user.verificationTokenExpires = null;
+      user.otp_code = null;
+      await this.userRepository.save(user);
+      
+      return {
+        success: true,
+        message: 'Contraseña actualizado correctamente',
+        data: null,
+      };
+
+    } catch (error) {
+      this.handleDBErrors(error);
+    }
+  }
+
+  private getOptCode(): number{
+    return Math.floor(Math.random() * 900000) + 100000;
+  }
+
 
   async findOneByDNI( DNI: string ): Promise<ResponseInterface> {
     try {
@@ -117,7 +191,6 @@ export class AuthService {
       });
     }
   }
-
 
   async update( email: string, updateUserDto: UpdateUserDto) {
     try {

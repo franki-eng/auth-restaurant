@@ -1,7 +1,6 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { User } from './entities/user.entity';
-import { CreateUserDto, LoginUserDto, UpdateUserDto } from './dto';
+import { CreateUserDto, LoginUserDto, VerifyEmailExisteDto, UpdateUserDto, ConfirmPasswordDto } from './dto';
 import { ResponseInterface } from './interfaces/response-success.interface';
 
 @Controller('auth')
@@ -36,6 +35,20 @@ export class AuthController {
     @Body() updateUser: UpdateUserDto
   ) {
     return this.authService.update( email, updateUser );
+  }
+
+  @Post('forget-password')
+  async updatePasswordUser(
+    @Body() verifyEmailExisteDto: VerifyEmailExisteDto
+  ){
+    return await this.authService.updatePassword(verifyEmailExisteDto);
+  }
+
+  @Post('confirm-password')
+  async confirmPassword(
+    @Body() confirmPasswordDto: ConfirmPasswordDto,
+  ){
+    return await this.authService.confirmPassword(confirmPasswordDto);
   }
 
   //!TODO falta activar los cors y el ngrok

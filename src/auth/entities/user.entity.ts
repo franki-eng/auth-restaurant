@@ -25,4 +25,10 @@ export class User {
     @Column('boolean', { default: true })
     isActive: boolean;
 
+    @Column({ type: 'timestamp', nullable: true })
+    verificationTokenExpires: Date | null;
+
+    @Column('int',{ nullable: true})
+    otp_code: number | null;
+
 }
