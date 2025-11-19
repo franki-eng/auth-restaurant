@@ -1,6 +1,6 @@
 
 export interface SendMailOptions {
-    to: string | string[];
+    to: string;
     subject: string;
     htmlBody: string;
     attachements?: Attachement[];

@@ -6,7 +6,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { LoginUserDto, UpdateUserDto, VerifyEmailExisteDto } from './dto';
 import { ResponseInterface } from './interfaces/response-success.interface';
-import { MailService } from '../mail/mail.service';
+import { MailerService } from '../mail/mail.service';
 import { addMinutes } from 'date-fns';
 import { ConfirmPasswordDto } from './dto/confirm-password.dto';
 import { ConfigService } from '@nestjs/config';
@@ -20,7 +20,7 @@ export class AuthService {
   constructor( 
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    private readonly mailerService: MailService,
+    private readonly mailerService: MailerService,
     private readonly configService: ConfigService,
   ) {}
 
@@ -81,7 +81,7 @@ export class AuthService {
     user.verificationTokenExpires = addMinutes(new Date(), 5);
 
     await this.userRepository.save(user);
-    this.sendEmail(email, 'Confirmation password', user.otp_code );
+    await this.sendEmail(email, 'Password Confirmation', user.otp_code );
     const parseUser = this.parseUser(user);
     return {
       success: true,
